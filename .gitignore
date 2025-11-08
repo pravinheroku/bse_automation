@@ -1,0 +1,29 @@
+# Ignore Python virtual environment
+venv/
+
+# Ignore environment variables
+.env
+
+# Ignore log directories and files
+logs/
+full.log
+
+# Ignore media cache
+media_cache/
+downloads/
+
+# Ignore local SQLite database
+database.db
+# historical_announcements.db
+
+
+# Standard Python ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# OS-specific
+.DS_Store
+Thumbs.db
