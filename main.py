@@ -1,25 +1,25 @@
-# /home/pravin/Development/bse_scraper/main.py
+# main.py
 
 import time
 import asyncio
 import logging
 from datetime import datetime
 from pathlib import Path
-import sys  # <--- IMPORTED SYS
-import traceback  # <--- IMPORTED TRACEBACK
+import sys 
+import traceback  
 from core.scraper import BSEScraper
 
 
-# --- NEW: GLOBAL EXCEPTION HANDLER ---
+
 def handle_exception(exc_type, exc_value, exc_traceback):
     """Logs unhandled exceptions to the root logger."""
     logger = logging.getLogger()
     if logger.handlers:
-        # Format the exception traceback
+        
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         tb_text = "".join(tb_lines)
         logger.critical(f"Unhandled exception:\n{tb_text}")
-    # Also call the default excepthook to print to stderr
+    
     sys.__excepthook__(exc_type, exc_value, exc_traceback)
 
 
@@ -29,32 +29,32 @@ def setup_logging():
     log_dir = Path("logs") / f"LIVE-{run_timestamp}"
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # Get the root logger
+    
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # --- IMPORTANT: Clear any existing handlers ---
+    
 
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    # Create handlers
+    
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Console handler
+    
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    # File handler
+    
     file_handler = logging.FileHandler(log_dir / "run.log")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
     # --- Control third-party library verbosity ---
-    # Quieten down noisy google and other libraries
+    
     logging.getLogger("google.api_core").setLevel(logging.WARNING)
     logging.getLogger("google.auth.transport.requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
@@ -68,13 +68,12 @@ async def run_single_poll():
     Encapsulates the logic for a single polling run.
     It relies on the logger that was already configured by the main() function.
     """
-    # Get the logger for this specific module. It will inherit the root setup.
+    
     logger = logging.getLogger(__name__)
     logger.info("--- Starting new poll cycle ---")
 
     try:
-        # Each poll gets a fresh scraper instance.
-        # The scraper will automatically use the pre-configured root logger.
+        
         scraper = BSEScraper(test_mode=False)
 
         notification_tasks = await scraper.run()
@@ -98,13 +97,13 @@ def main():
     """
     polling_interval_seconds = 60
 
-    # 1. Set up logging for the entire lifetime of this script run.
+    
     log_path = setup_logging()
 
-    # --- NEW: SET THE GLOBAL EXCEPTION HOOK ---
+    
     sys.excepthook = handle_exception
 
-    # Now we get the logger for the main module.
+    
     logger = logging.getLogger(__name__)
 
     logger.info("🚀 Starting BSE Real-Time Scraper...")
@@ -113,7 +112,7 @@ def main():
 
     while True:
         try:
-            # asyncio.run() creates and closes a new event loop for each poll.
+            
 
             asyncio.run(run_single_poll())
 
@@ -126,7 +125,7 @@ def main():
             logger.info("\n🛑 Scraper stopped by user.")
             break
         except Exception as e:
-            # This will catch critical errors in the main loop or asyncio.run itself.
+            
             logger.critical(
                 f"A critical error occurred in the main loop: {e}", exc_info=True
             )
