@@ -1,4 +1,4 @@
-# /home/pravin/Development/bse_scraper/test_single.py
+# test_single.py
 
 from core.scraper import BSEScraper
 import asyncio
@@ -6,20 +6,20 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import os
-import sys  # <--- IMPORT SYS
-import traceback  # <--- IMPORT TRACEBACK
+import sys  
+import traceback  
 
 
-# --- NEW: GLOBAL EXCEPTION HANDLER ---
+
 def handle_exception(exc_type, exc_value, exc_traceback):
     """Logs unhandled exceptions to the root logger."""
     logger = logging.getLogger()
     if logger.handlers:
-        # Format the exception traceback
+        
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         tb_text = "".join(tb_lines)
         logger.critical(f"Unhandled exception:\n{tb_text}")
-    # Also call the default excepthook to print to stderr
+    
     sys.__excepthook__(exc_type, exc_value, exc_traceback)
 
 
@@ -29,31 +29,31 @@ def setup_logging():
     log_dir = Path("logs") / f"SINGLE_TEST-{run_timestamp}"
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # Get the root logger
+    
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # --- IMPORTANT: Clear any existing handlers ---
+    
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    # Create handlers
+    
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Console handler
+    
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    # File handler
+    
     file_handler = logging.FileHandler(log_dir / "run.log")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
     # --- Control third-party library verbosity ---
-    # Quieten down the noisy google libraries
+    
     logging.getLogger("google.api_core").setLevel(logging.WARNING)
     logging.getLogger("google.auth.transport.requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
@@ -64,10 +64,10 @@ def setup_logging():
 
 async def main():
     log_path = setup_logging()
-    # --- NEW: SET THE GLOBAL EXCEPTION HOOK ---
+    
     sys.excepthook = handle_exception
 
-    # use the root logger
+    
     logger = logging.getLogger(__name__)
 
     logger.info("🧪 --- SINGLE PDF TEST ---")
