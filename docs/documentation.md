@@ -103,7 +103,7 @@ These are the entry points for running the system in different modes.
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/pravinheroku/bse_automation
     cd bse_auto
     ```
 
