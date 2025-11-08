@@ -1,4 +1,4 @@
-# /workspaces/bse_auto/historical_backfill.py
+# historical_backfill.py
 
 import asyncio
 import logging
@@ -18,11 +18,10 @@ LOG_DIR = Path("logs") / "historical_backfill"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 MONTHS_TO_BACKFILL = 24
 # --- Concurrency Control ---
-MAX_CONCURRENT_WORKERS = 3  # REDUCED from 4 to be kinder
-THROTTLE_SECONDS = 5.0  # Time to pause all workers when server complains
+MAX_CONCURRENT_WORKERS = 3 
+THROTTLE_SECONDS = 5.0  
 
 # --- Logging Setup ---
-# ... (logging setup is unchanged) ...
 run_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 log_file = LOG_DIR / f"backfill_run-{run_timestamp}.log"
 logging.basicConfig(
@@ -35,8 +34,7 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 
 
-# --- Scraper Logic ---
-# ... (HEADERS, API_URL, XBRL_URL are unchanged) ...
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
     "Referer": "https://www.bseindia.com/",
@@ -46,9 +44,7 @@ API_URL = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
 XBRL_URL = "https://www.bseindia.com/Msource/90D/CorpXbrlGen.aspx"
 
 
-# --- START OF FIX ---
 
-# A global event to signal all workers to slow down
 throttle_event = Event()
 
 
@@ -56,13 +52,13 @@ async def fetch_pdf_url_async(session, news_id, scrip_code, company_name):
     """Asynchronously fetches the PDF URL with retries and better logging."""
     params = {"Bsenewid": news_id, "Scripcode": scrip_code}
     for attempt in range(5):
-        # If the throttle is on, wait for it to be released
+        
         if throttle_event.is_set():
             logger.warning(
                 f"Throttling is active. Worker for {company_name} pausing..."
             )
             await asyncio.sleep(THROTTLE_SECONDS)
-            throttle_event.clear()  # Release the brake
+            throttle_event.clear()  
 
         try:
             async with session.get(
@@ -71,10 +67,10 @@ async def fetch_pdf_url_async(session, news_id, scrip_code, company_name):
                 response.raise_for_status()
                 content = await response.read()
 
-                # We only try to parse XML *after* a successful request
+                
                 root = etree.fromstring(
                     content
-                )  # This is where XMLSyntaxError can happen
+                )  
 
                 if attempt > 0:
                     logger.info(
@@ -91,7 +87,7 @@ async def fetch_pdf_url_async(session, news_id, scrip_code, company_name):
                 logger.warning(
                     f"AttachmentURL not found for {company_name} ({news_id})"
                 )
-                return None  # Successful request, but no URL found
+                return None  
 
         except (aiohttp.ClientError, asyncio.TimeoutError, etree.XMLSyntaxError) as e:
             wait_time = 2**attempt
@@ -99,9 +95,9 @@ async def fetch_pdf_url_async(session, news_id, scrip_code, company_name):
                 f"Attempt {attempt+1}/5 for {company_name} ({news_id}) failed: {type(e).__name__}. Retrying in {wait_time}s..."
             )
 
-            # If it's a syntax error, it means the server is angry. Hit the brakes.
+            
             if isinstance(e, etree.XMLSyntaxError):
-                throttle_event.set()  # Press the brake pedal
+                throttle_event.set() 
 
             await asyncio.sleep(wait_time)
 
@@ -113,7 +109,7 @@ async def fetch_pdf_url_async(session, news_id, scrip_code, company_name):
 
 def save_to_db_threaded(db_path: str, item: dict, pdf_url: str):
     """This function is executed in a separate thread and creates its own connection."""
-    # (This function is correct and remains unchanged)
+    
     try:
         date_string = item.get("DissemDT", "")
         dt_object = datetime.fromisoformat(date_string)
@@ -149,7 +145,7 @@ def save_to_db_threaded(db_path: str, item: dict, pdf_url: str):
 
 async def worker(name: str, queue: Queue, db_path: str):
     """The worker task that processes items from the queue."""
-    # (This function is correct and remains unchanged, but I'm including it for completeness)
+    
     async with aiohttp.ClientSession() as session:
         while True:
             item = await queue.get()
@@ -170,7 +166,7 @@ async def worker(name: str, queue: Queue, db_path: str):
             queue.task_done()
 
 
-# The function fetch_announcements_for_period is also correct and remains unchanged.
+
 def fetch_announcements_for_period(session, from_date, to_date):
     params = {
         "pageno": 1,
@@ -243,7 +239,7 @@ def fetch_announcements_for_period(session, from_date, to_date):
     return all_announcements
 
 
-# The main function also remains unchanged in its logic.
+
 async def main():
     logger.info("🚀 Starting RESILIENT historical backfill process...")
     logger.info("👷‍♂️ Using %s concurrent workers.", MAX_CONCURRENT_WORKERS)
